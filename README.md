@@ -27,4 +27,4 @@ The core layer is the Ethereum ecosystem, specificially the low-cost and fast si
 
 ### UI
 
-Typically users would interact with the smart contract via the UI. In order to maximize decentraliztion, the UI would be written in React, bundled, uploaded to IPFS, and an ENS domain name would be set. The user would visit `some-app-name.ens` in a compatible browser. Users will also be able to visit the traditional domain name (`some-app-name.com`) via any browser.
+Typically users would interact with the smart contract via the UI. In order to maximize decentraliztion, the UI would be written in React, bundled, uploaded to IPFS, and an ENS domain name would be set. The user would visit `some-app-name.eth` in a compatible browser. Users will also be able to visit the traditional domain name (`some-app-name.com`) via any browser.
