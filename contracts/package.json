@@ -2,8 +2,9 @@
   "name": "survivor",
   "scripts": {
     "deploy-verify": "npm run deploy && sleep 20 && npm run verify",
-    "deploy": "hardhat run scripts/deploy.ts --network mumbai | tee temp_address.txt",
-    "verify": "hardhat verify $(tail -c 43 temp_address.txt) && rm temp_address.txt"
+    "deploy": "hardhat run scripts/deploy.ts | tee temp_address.txt",
+    "verify": "hardhat verify $(tail -c 43 temp_address.txt) && rm temp_address.txt",
+    "test": "hardhat test --network hardhat"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^2.0.0",
@@ -11,6 +12,7 @@
     "hardhat": "^2.12.2"
   },
   "dependencies": {
+    "@openzeppelin/contracts": "^4.8.0",
     "dotenv": "^16.0.3"
   }
 }
