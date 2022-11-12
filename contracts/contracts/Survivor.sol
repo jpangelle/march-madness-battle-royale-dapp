@@ -59,6 +59,7 @@ contract Survivor is Ownable {
     }
 
     function payoutWinner(address payable _address, uint256 amount) public onlyOwner {
+        require(entries[_address].alive, "Entry is eliminated or does not exist");
         _address.transfer(amount);
     }
 }

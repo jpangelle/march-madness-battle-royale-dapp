@@ -87,4 +87,28 @@ describe("Survivor", function () {
     expect(entryName2).to.equal("");
     expect(alive2).to.equal(false);
   });
+
+  it("should eliminate entry", async () => {
+    const { survivor, owner, otherAccount } = await loadFixture(
+      deploySurvivorFixture
+    );
+
+    await survivor.openRegistration();
+
+    await survivor.connect(otherAccount).registerEntry("slamma jamma");
+
+    await expect(
+      survivor.connect(otherAccount).eliminateEntry(otherAccount.address)
+    ).to.be.revertedWith("Ownable: caller is not the owner");
+
+    await expect(survivor.eliminateEntry(owner.address)).to.be.revertedWith(
+      "Entry is already eliminated or does not exist"
+    );
+
+    await survivor.eliminateEntry(otherAccount.address);
+
+    await expect(
+      survivor.eliminateEntry(otherAccount.address)
+    ).to.be.revertedWith("Entry is already eliminated or does not exist");
+  });
 });
