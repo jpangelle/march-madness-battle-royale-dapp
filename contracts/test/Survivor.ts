@@ -50,7 +50,7 @@ describe("Survivor", function () {
 
     await survivor.connect(otherAccount).registerEntry("slamma jamma");
 
-    const [entryName, alive] = await survivor.entries(otherAccount.address, 0);
+    const [entryName, alive] = await survivor.entries(otherAccount.address);
 
     expect(await survivor.entryAddresses(0)).to.equal(otherAccount.address);
     expect(entryName).to.equal("slamma jamma");
@@ -64,10 +64,10 @@ describe("Survivor", function () {
 
     await survivor.connect(otherAccount).registerEntry("slamma jamma");
 
-    const [entryName, alive] = await survivor.entries(otherAccount.address, 0);
+    const [entryName1, alive1] = await survivor.entries(otherAccount.address);
 
-    expect(entryName).to.equal("slamma jamma");
-    expect(alive).to.equal(true);
+    expect(entryName1).to.equal("slamma jamma");
+    expect(alive1).to.equal(true);
 
     await expect(survivor.resetSurvivor()).to.be.revertedWith(
       "Registration must be closed in order to reset"
@@ -81,9 +81,10 @@ describe("Survivor", function () {
 
     await survivor.resetSurvivor();
 
+    const [entryName2, alive2] = await survivor.entries(otherAccount.address);
+
     await expect(survivor.entryAddresses(0)).to.be.revertedWithoutReason();
-    await expect(
-      survivor.entries(otherAccount.address, 0)
-    ).to.be.revertedWithoutReason();
+    expect(entryName2).to.equal("");
+    expect(alive2).to.equal(false);
   });
 });

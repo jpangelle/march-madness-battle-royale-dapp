@@ -15,18 +15,18 @@ contract Survivor is Ownable {
     address[] public entryAddresses;
     bool public isRegistrationOpen = false;
 
-    mapping(address => Entry[]) public entries;
+    mapping(address => Entry) public entries;
 
     function registerEntry(string memory _entryName) public {
         require(isRegistrationOpen, "Registration is closed");
         Entry memory newEntry;
         newEntry.entryName = _entryName;
         newEntry.alive = true;
-        entries[msg.sender].push(newEntry);
+        entries[msg.sender] = newEntry;
         entryAddresses.push(msg.sender);
     }
 
-    function resetSurvivor() public onlyOwner{
+    function resetSurvivor() public onlyOwner {
         require(!isRegistrationOpen, "Registration must be closed in order to reset");
         for (uint i = 0; i < entryAddresses.length; i++) {
             delete entries[entryAddresses[i]];
@@ -39,8 +39,26 @@ contract Survivor is Ownable {
         isRegistrationOpen = true;
     }
 
-    function closeRegistration() public onlyOwner{
+    function closeRegistration() public onlyOwner {
         require(isRegistrationOpen, "Registration is already closed");
         isRegistrationOpen = false;
+    }
+
+    function makeAPick(string memory pick) public {
+        require(isRegistrationOpen, "Registration must be open in order to make a pick");
+        for (uint i = 0; i < entryAddresses.length; i++) {
+            if (entries[msg.sender].alive) {
+                entries[msg.sender].picks.push(pick);
+            }
+        }
+    }
+
+    function eliminateEntry(address _address) public onlyOwner {
+        require(entries[_address].alive, "Entry is already eliminated or does not exist");
+        entries[_address].alive = false;
+    }
+
+    function payoutWinner(address payable _address, uint256 amount) public onlyOwner {
+        _address.transfer(amount);
     }
 }
