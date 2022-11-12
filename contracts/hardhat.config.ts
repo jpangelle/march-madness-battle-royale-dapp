@@ -10,7 +10,7 @@ const config: HardhatUserConfig = {
   networks: {
     hardhat: {},
     mumbai: {
-      url: process.env.INFURA_ENDPOINT_POLYGON_MUMBAI,
+      url: process.env.INFURA_ENDPOINT_POLYGON_MUMBAI || "",
       accounts: [process.env.HOT_WALLET_PRIVATE_KEY],
     },
   },
