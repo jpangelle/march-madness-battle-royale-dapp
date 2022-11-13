@@ -99,10 +99,14 @@ describe("Survivor", function () {
       otherAccounts[0].address
     );
 
+    const day = await survivor.day();
+
     await expect(survivor.poolEntryAddresses(0)).to.be.revertedWithoutReason();
+
     expect(entryName2).to.equal("");
     expect(alive2).to.equal(false);
     expect(isRegistered2).to.equal(false);
+    expect(day).to.equal(0);
   });
 
   it("should eliminate pool entry", async () => {
@@ -206,19 +210,29 @@ describe("Survivor", function () {
         deploySurvivorFixture
       );
 
-      await expect(
-        survivor.connect(otherAccounts[0]).makeAPick(0)
-      ).to.be.revertedWith("Registration must be open in order to make a pick");
-
       await survivor.openRegistration();
 
       await expect(
         survivor.connect(otherAccounts[0]).makeAPick(0)
-      ).to.be.revertedWith("Pool entry does not exist");
+      ).to.be.revertedWith(
+        "Registration must be closed in order to make a pick"
+      );
 
       await survivor
         .connect(otherAccounts[0])
         .registerPoolEntry("slamma jamma");
+
+      await survivor.closeRegistration();
+
+      await expect(
+        survivor.connect(otherAccounts[1]).makeAPick(0)
+      ).to.be.rejectedWith("Pool entry does not exist");
+
+      await expect(
+        survivor.connect(otherAccounts[0]).makeAPick(0)
+      ).to.be.rejectedWith("Can not pick yet");
+
+      await survivor.setDay(1);
 
       await expect(
         survivor.connect(otherAccounts[0]).makeAPick(64)
@@ -226,15 +240,13 @@ describe("Survivor", function () {
 
       await survivor.connect(otherAccounts[0]).makeAPick(0);
 
+      await survivor.setDay(2);
+
       await expect(
         survivor.connect(otherAccounts[0]).makeAPick(0)
       ).to.be.rejectedWith("Pick already exists");
 
       await survivor.connect(otherAccounts[0]).makeAPick(1);
-
-      await expect(
-        survivor.connect(otherAccounts[0]).makeAPick(0)
-      ).to.be.rejectedWith("Pick already exists");
 
       const picks = await survivor
         .connect(otherAccounts[0])
@@ -254,6 +266,8 @@ describe("Survivor", function () {
       await survivor
         .connect(otherAccounts[0])
         .registerPoolEntry("slamma jamma");
+
+      await survivor.closeRegistration();
 
       await survivor.eliminatePoolEntry(otherAccounts[0].address);
 
@@ -279,5 +293,29 @@ describe("Survivor", function () {
       otherAccounts[0].address,
       otherAccounts[1].address,
     ]);
+  });
+
+  it("should set day", async () => {
+    const { survivor, otherAccounts } = await loadFixture(
+      deploySurvivorFixture
+    );
+
+    await expect(
+      survivor.connect(otherAccounts[0]).setDay(1)
+    ).to.be.revertedWith("Ownable: caller is not the owner");
+
+    await survivor.openRegistration();
+
+    await expect(survivor.setDay(1)).to.be.revertedWith(
+      "Registration must be closed in order to set day"
+    );
+
+    await survivor.closeRegistration();
+
+    await survivor.setDay(1);
+
+    const day = await survivor.day();
+
+    expect(day).to.equal(1);
   });
 });

@@ -13,6 +13,7 @@ contract Survivor is Ownable {
 
     address[] public poolEntryAddresses;
     bool public isRegistrationOpen = false;
+    uint256 public day = 0;
 
     mapping(address => PoolEntry) public poolEntries;
 
@@ -32,6 +33,12 @@ contract Survivor is Ownable {
             delete poolEntries[poolEntryAddresses[i]];
         }
         delete poolEntryAddresses;
+        day = 0;
+    }
+
+    function setDay(uint256 _day) public onlyOwner {
+        require(!isRegistrationOpen, "Registration must be closed in order to set day");
+        day = _day;
     }
 
     function openRegistration() public onlyOwner {
@@ -45,9 +52,10 @@ contract Survivor is Ownable {
     }
 
     function makeAPick(uint256 pick) public {
-        require(isRegistrationOpen, "Registration must be open in order to make a pick");
+        require(!isRegistrationOpen, "Registration must be closed in order to make a pick");
         require(poolEntries[msg.sender].isRegistered, "Pool entry does not exist");
         require(poolEntries[msg.sender].alive, "Pool entry is eliminated");
+        require(poolEntries[msg.sender].picks.length < day, "Can not pick yet");
         require(pick <= 63, "Pick is not valid");
         for (uint256 i = 0; i < poolEntries[msg.sender].picks.length; i++) {
             require(pick != poolEntries[msg.sender].picks[i], "Pick already exists");
