@@ -111,4 +111,64 @@ describe("Survivor", function () {
       survivor.eliminateEntry(otherAccount.address)
     ).to.be.revertedWith("Entry is already eliminated or does not exist");
   });
+
+  it(" should payout winner", async () => {
+    const { survivor, owner, otherAccount } = await loadFixture(
+      deploySurvivorFixture
+    );
+
+    await survivor.openRegistration();
+
+    await survivor.connect(otherAccount).registerEntry("slamma jamma");
+
+    await expect(
+      survivor.connect(otherAccount).payoutWinner(otherAccount.address, 1)
+    ).to.be.revertedWith("Ownable: caller is not the owner");
+
+    await expect(
+      survivor.payoutWinner(owner.address, ethers.utils.parseEther("1"))
+    ).to.be.revertedWith("Entry is eliminated or does not exist");
+
+    await expect(
+      survivor.payoutWinner(otherAccount.address, ethers.utils.parseEther("1"))
+    ).to.be.revertedWith("Contract does not have enough funds");
+
+    await owner.sendTransaction({
+      to: survivor.address,
+      value: ethers.utils.parseEther("2"),
+      gasLimit: 21055,
+    });
+
+    await survivor.payoutWinner(
+      otherAccount.address,
+      ethers.utils.parseEther("1")
+    );
+  });
+
+  it("should handle making a pick", async () => {
+    const { survivor, otherAccount } = await loadFixture(deploySurvivorFixture);
+
+    await expect(
+      survivor.connect(otherAccount).makeAPick("kentucky")
+    ).to.be.revertedWith("Registration must be open in order to make a pick");
+
+    await survivor.openRegistration();
+
+    await expect(
+      survivor.connect(otherAccount).makeAPick("kentucky")
+    ).to.be.revertedWith("Entry is eliminated or does not exist");
+
+    await survivor.connect(otherAccount).registerEntry("slamma jamma");
+
+    await survivor.connect(otherAccount).makeAPick("kentucky");
+
+    await survivor.connect(otherAccount).makeAPick("duke");
+
+    const picks = await survivor
+      .connect(otherAccount)
+      .getPicks(otherAccount.address);
+
+    expect(picks[0]).to.equal("kentucky");
+    expect(picks[1]).to.equal("duke");
+  });
 });

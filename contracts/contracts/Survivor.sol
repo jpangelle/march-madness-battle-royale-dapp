@@ -46,11 +46,8 @@ contract Survivor is Ownable {
 
     function makeAPick(string memory pick) public {
         require(isRegistrationOpen, "Registration must be open in order to make a pick");
-        for (uint i = 0; i < entryAddresses.length; i++) {
-            if (entries[msg.sender].alive) {
-                entries[msg.sender].picks.push(pick);
-            }
-        }
+        require(entries[msg.sender].alive, "Entry is eliminated or does not exist");
+        entries[msg.sender].picks.push(pick);
     }
 
     function eliminateEntry(address _address) public onlyOwner {
@@ -60,6 +57,13 @@ contract Survivor is Ownable {
 
     function payoutWinner(address payable _address, uint256 amount) public onlyOwner {
         require(entries[_address].alive, "Entry is eliminated or does not exist");
+        require(address(this).balance >= amount, "Contract does not have enough funds");
         _address.transfer(amount);
     }
+
+    function getPicks(address _address) public view returns (string[] memory) {
+        return entries[_address].picks;
+    }
+
+    receive() external payable {}
 }

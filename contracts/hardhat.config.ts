@@ -2,6 +2,7 @@ import { HardhatUserConfig } from "hardhat/config";
 import "@nomiclabs/hardhat-etherscan";
 import "@nomicfoundation/hardhat-toolbox";
 import dotenv from "dotenv";
+import "solidity-coverage";
 
 dotenv.config();
 
