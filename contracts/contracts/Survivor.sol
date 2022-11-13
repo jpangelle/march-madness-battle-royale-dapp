@@ -1,37 +1,37 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.9;
 
-// Uncomment this line to use console.log
-// import "hardhat/console.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract Survivor is Ownable {
-    struct Entry {
-        string entryName;
+    struct PoolEntry {
+        string poolEntryName;
         bool alive;
-        string[] picks;
+        uint256[] picks;
+        bool isRegistered;
     }
 
-    address[] public entryAddresses;
+    address[] public poolEntryAddresses;
     bool public isRegistrationOpen = false;
 
-    mapping(address => Entry) public entries;
+    mapping(address => PoolEntry) public poolEntries;
 
-    function registerEntry(string memory _entryName) public {
+    function registerPoolEntry(string memory _poolEntryName) public {
         require(isRegistrationOpen, "Registration is closed");
-        Entry memory newEntry;
-        newEntry.entryName = _entryName;
-        newEntry.alive = true;
-        entries[msg.sender] = newEntry;
-        entryAddresses.push(msg.sender);
+        PoolEntry memory newPoolEntry;
+        newPoolEntry.poolEntryName = _poolEntryName;
+        newPoolEntry.alive = true;
+        newPoolEntry.isRegistered = true;
+        poolEntries[msg.sender] = newPoolEntry;
+        poolEntryAddresses.push(msg.sender);
     }
 
-    function resetSurvivor() public onlyOwner {
+    function resetSurvivorPool() public onlyOwner {
         require(!isRegistrationOpen, "Registration must be closed in order to reset");
-        for (uint i = 0; i < entryAddresses.length; i++) {
-            delete entries[entryAddresses[i]];
+        for (uint i = 0; i < poolEntryAddresses.length; i++) {
+            delete poolEntries[poolEntryAddresses[i]];
         }
-        delete entryAddresses;
+        delete poolEntryAddresses;
     }
 
     function openRegistration() public onlyOwner {
@@ -44,25 +44,36 @@ contract Survivor is Ownable {
         isRegistrationOpen = false;
     }
 
-    function makeAPick(string memory pick) public {
+    function makeAPick(uint256 pick) public {
         require(isRegistrationOpen, "Registration must be open in order to make a pick");
-        require(entries[msg.sender].alive, "Entry is eliminated or does not exist");
-        entries[msg.sender].picks.push(pick);
+        require(poolEntries[msg.sender].isRegistered, "Pool entry does not exist");
+        require(poolEntries[msg.sender].alive, "Pool entry is eliminated");
+        require(pick <= 63, "Pick is not valid");
+        for (uint256 i = 0; i < poolEntries[msg.sender].picks.length; i++) {
+            require(pick != poolEntries[msg.sender].picks[i], "Pick already exists");
+        }
+        poolEntries[msg.sender].picks.push(pick);
     }
 
-    function eliminateEntry(address _address) public onlyOwner {
-        require(entries[_address].alive, "Entry is already eliminated or does not exist");
-        entries[_address].alive = false;
+    function eliminatePoolEntry(address _address) public onlyOwner {
+        require(poolEntries[_address].isRegistered, "Pool entry does not exist");
+        require(poolEntries[_address].alive, "Pool entry is already eliminated");
+        poolEntries[_address].alive = false;
     }
 
     function payoutWinner(address payable _address, uint256 amount) public onlyOwner {
-        require(entries[_address].alive, "Entry is eliminated or does not exist");
+        require(poolEntries[_address].isRegistered, "Pool entry does not exist");
+        require(poolEntries[_address].alive, "Pool entry is eliminated");
         require(address(this).balance >= amount, "Contract does not have enough funds");
         _address.transfer(amount);
     }
 
-    function getPicks(address _address) public view returns (string[] memory) {
-        return entries[_address].picks;
+    function getPoolEntryPicks(address _address) public view returns (uint256[] memory) {
+        return poolEntries[_address].picks;
+    }
+
+    function getPoolEntries() public view returns (address[] memory) {
+        return poolEntryAddresses;
     }
 
     receive() external payable {}
