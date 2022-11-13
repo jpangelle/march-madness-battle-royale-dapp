@@ -229,31 +229,34 @@ describe("Survivor", function () {
       ).to.be.rejectedWith("Pool entry does not exist");
 
       await expect(
-        survivor.connect(otherAccounts[0]).makeAPick(0)
-      ).to.be.rejectedWith("Can not pick yet");
-
-      await survivor.setDay(1);
-
-      await expect(
         survivor.connect(otherAccounts[0]).makeAPick(64)
       ).to.be.rejectedWith("Pick is not valid");
 
       await survivor.connect(otherAccounts[0]).makeAPick(0);
-
-      await survivor.setDay(2);
 
       await expect(
         survivor.connect(otherAccounts[0]).makeAPick(0)
       ).to.be.rejectedWith("Pick already exists");
 
       await survivor.connect(otherAccounts[0]).makeAPick(1);
+      await survivor.connect(otherAccounts[0]).makeAPick(2);
+      await survivor.connect(otherAccounts[0]).makeAPick(3);
+      await survivor.connect(otherAccounts[0]).makeAPick(4);
+      await survivor.connect(otherAccounts[0]).makeAPick(5);
+      await survivor.connect(otherAccounts[0]).makeAPick(6);
+      await survivor.connect(otherAccounts[0]).makeAPick(7);
+      await survivor.connect(otherAccounts[0]).makeAPick(8);
+      await survivor.connect(otherAccounts[0]).makeAPick(9);
 
       const picks = await survivor
         .connect(otherAccounts[0])
         .getPoolEntryPicks(otherAccounts[0].address);
 
-      expect(picks[0]).to.equal(0);
-      expect(picks[1]).to.equal(1);
+      expect(picks).to.deep.equal([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+
+      await expect(
+        survivor.connect(otherAccounts[0]).makeAPick(10)
+      ).to.be.revertedWith("Too many picks, use editPick");
     });
 
     it("should handle making a pick for eliminated pool entry", async () => {
@@ -293,6 +296,55 @@ describe("Survivor", function () {
       otherAccounts[0].address,
       otherAccounts[1].address,
     ]);
+  });
+
+  it("should edit pick", async () => {
+    // require(poolEntries[msg.sender].isRegistered, "Pool entry does not exist");
+    const { survivor, otherAccounts } = await loadFixture(
+      deploySurvivorFixture
+    );
+
+    await survivor.openRegistration();
+
+    await survivor.connect(otherAccounts[0]).registerPoolEntry("slamma jamma");
+
+    await expect(
+      survivor.connect(otherAccounts[0]).editPick(1, 1)
+    ).to.be.rejectedWith("Registration must be closed in order to edit a pick");
+
+    await survivor.closeRegistration();
+
+    await survivor.connect(otherAccounts[0]).makeAPick(0);
+
+    const picks1 = await survivor
+      .connect(otherAccounts[0])
+      .getPoolEntryPicks(otherAccounts[0].address);
+
+    expect(picks1[0]).to.equal(0);
+
+    await survivor.connect(otherAccounts[0]).editPick(1, 1);
+
+    await expect(
+      survivor.connect(otherAccounts[1]).editPick(1, 1)
+    ).to.be.revertedWith("Pool entry does not exist");
+
+    const picks2 = await survivor
+      .connect(otherAccounts[0])
+      .getPoolEntryPicks(otherAccounts[0].address);
+
+    expect(picks2[0]).to.equal(1);
+
+    await survivor.setDay(2);
+
+    await expect(
+      survivor.connect(otherAccounts[0]).editPick(1, 1)
+    ).to.be.revertedWith("Invalid day");
+
+    await survivor.eliminatePoolEntry(otherAccounts[0].address);
+
+    await expect(
+      survivor.connect(otherAccounts[0]).editPick(1, 1)
+    ).to.be.revertedWith("Pool entry is eliminated");
   });
 
   it("should set day", async () => {

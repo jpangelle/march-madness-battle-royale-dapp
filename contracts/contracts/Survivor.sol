@@ -51,16 +51,24 @@ contract Survivor is Ownable {
         isRegistrationOpen = false;
     }
 
-    function makeAPick(uint256 pick) public {
+    function makeAPick(uint256 _pick) public {
         require(!isRegistrationOpen, "Registration must be closed in order to make a pick");
         require(poolEntries[msg.sender].isRegistered, "Pool entry does not exist");
         require(poolEntries[msg.sender].alive, "Pool entry is eliminated");
-        require(poolEntries[msg.sender].picks.length < day, "Can not pick yet");
-        require(pick <= 63, "Pick is not valid");
+        require(poolEntries[msg.sender].picks.length < 10, "Too many picks, use editPick");
+        require(_pick <= 63, "Pick is not valid");
         for (uint256 i = 0; i < poolEntries[msg.sender].picks.length; i++) {
-            require(pick != poolEntries[msg.sender].picks[i], "Pick already exists");
+            require(_pick != poolEntries[msg.sender].picks[i], "Pick already exists");
         }
-        poolEntries[msg.sender].picks.push(pick);
+        poolEntries[msg.sender].picks.push(_pick);
+    }
+
+    function editPick(uint256 _pick, uint256 _day) public  {
+        require(!isRegistrationOpen, "Registration must be closed in order to edit a pick");
+        require(poolEntries[msg.sender].isRegistered, "Pool entry does not exist");
+        require(poolEntries[msg.sender].alive, "Pool entry is eliminated");
+        require(_day >= day && _day <= 10, "Invalid day");
+        poolEntries[msg.sender].picks[_day - 1] = _pick;
     }
 
     function eliminatePoolEntry(address _address) public onlyOwner {
@@ -69,11 +77,11 @@ contract Survivor is Ownable {
         poolEntries[_address].alive = false;
     }
 
-    function payoutWinner(address payable _address, uint256 amount) public onlyOwner {
+    function payoutWinner(address payable _address, uint256 _amount) public onlyOwner {
         require(poolEntries[_address].isRegistered, "Pool entry does not exist");
         require(poolEntries[_address].alive, "Pool entry is eliminated");
-        require(address(this).balance >= amount, "Contract does not have enough funds");
-        _address.transfer(amount);
+        require(address(this).balance >= _amount, "Contract does not have enough funds");
+        _address.transfer(_amount);
     }
 
     function getPoolEntryPicks(address _address) public view returns (uint256[] memory) {
