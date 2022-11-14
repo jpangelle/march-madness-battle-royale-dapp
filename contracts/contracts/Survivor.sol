@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 contract Survivor is Ownable {
     struct PoolEntry {
         string poolEntryName;
-        uint256[] picks;
+        uint256[10] picks;
         bool isRegistered;
     }
 
@@ -59,24 +59,16 @@ contract Survivor is Ownable {
         isRegistrationOpen = false;
     }
 
-    function makeAPick(uint256 _pick) public {
-        require(!isRegistrationOpen, "Registration must be closed in order to make a pick");
+    function makeAPick(uint256 _pick, uint256 _day) public {
+        require(!isRegistrationOpen, "Registration must be closed in order to make or edit a pick");
         require(poolEntries[msg.sender].isRegistered, "Pool entry does not exist");
         require(!isEntryEliminated(msg.sender), "Pool entry is eliminated");
-        require(poolEntries[msg.sender].picks.length < 10, "Too many picks, use editPick");
-        require(_pick <= 63, "Pick is not valid");
+        require(_pick != 0 && _pick <= 64, "Pick is not valid");
+        require(_day >= day, "Invalid day");
         for (uint256 i = 0; i < poolEntries[msg.sender].picks.length; i++) {
             require(_pick != poolEntries[msg.sender].picks[i], "Pick already exists");
         }
-        poolEntries[msg.sender].picks.push(_pick);
-    }
-
-    function editPick(uint256 _pick, uint256 _day) public  {
-        require(!isRegistrationOpen, "Registration must be closed in order to edit a pick");
-        require(poolEntries[msg.sender].isRegistered, "Pool entry does not exist");
-        require(!isEntryEliminated(msg.sender), "Pool entry is eliminated");
-        require(_day >= day && _day <= 10, "Invalid day");
-        poolEntries[msg.sender].picks[_day - 1] = _pick;
+        poolEntries[msg.sender].picks[_day] = _pick;
     }
 
     function updateEliminatedTeams(uint256[] memory _eliminatedTeams) public onlyOwner{
@@ -92,7 +84,7 @@ contract Survivor is Ownable {
         token.transfer(_address, _amount);
     }
 
-    function getPoolEntryPicks(address _address) public view returns (uint256[] memory) {
+    function getPoolEntryPicks(address _address) public view returns (uint256[10] memory) {
         return poolEntries[_address].picks;
     }
 
@@ -107,7 +99,7 @@ contract Survivor is Ownable {
     function isEntryEliminated(address _address) public view returns (bool) {
         for (uint256 i = 0; i < poolEntries[_address].picks.length; i++) {
             for (uint256 j = 0; j < eliminatedTeams.length; j++) {
-                if (poolEntries[_address].picks[i] == eliminatedTeams[j] && i <= day - 1) {
+                if (poolEntries[_address].picks[i] == eliminatedTeams[j] && i <= day) {
                     return true;
                 }
             }

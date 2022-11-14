@@ -156,9 +156,7 @@ describe("Survivor", function () {
 
     await survivor.closeRegistration();
 
-    await survivor.setDay(1);
-
-    await survivor.connect(otherAccounts[0]).makeAPick(4);
+    await survivor.connect(otherAccounts[0]).makeAPick(4, 0);
 
     await expect(
       survivor.connect(otherAccounts[0]).updateEliminatedTeams([13])
@@ -178,9 +176,9 @@ describe("Survivor", function () {
 
     expect(isEliminated2).to.be.false;
 
-    await survivor.setDay(2);
+    await survivor.setDay(1);
 
-    await survivor.connect(otherAccounts[0]).makeAPick(7);
+    await survivor.connect(otherAccounts[0]).makeAPick(7, 1);
 
     await survivor.updateEliminatedTeams([7]);
 
@@ -253,9 +251,7 @@ describe("Survivor", function () {
 
       await survivor.closeRegistration();
 
-      await survivor.setDay(1);
-
-      await survivor.connect(otherAccounts[0]).makeAPick(4);
+      await survivor.connect(otherAccounts[0]).makeAPick(4, 0);
 
       await survivor.updateEliminatedTeams([4, 12]);
 
@@ -280,9 +276,9 @@ describe("Survivor", function () {
       await survivor.openRegistration();
 
       await expect(
-        survivor.connect(otherAccounts[0]).makeAPick(0)
+        survivor.connect(otherAccounts[0]).makeAPick(1, 0)
       ).to.be.revertedWith(
-        "Registration must be closed in order to make a pick"
+        "Registration must be closed in order to make or edit a pick"
       );
 
       await approveUSDCTokens(otherAccounts[0], survivor.address);
@@ -294,38 +290,42 @@ describe("Survivor", function () {
       await survivor.closeRegistration();
 
       await expect(
-        survivor.connect(otherAccounts[1]).makeAPick(0)
+        survivor.connect(otherAccounts[1]).makeAPick(1, 0)
       ).to.be.rejectedWith("Pool entry does not exist");
 
       await expect(
-        survivor.connect(otherAccounts[0]).makeAPick(64)
+        survivor.connect(otherAccounts[0]).makeAPick(0, 0)
       ).to.be.rejectedWith("Pick is not valid");
 
-      await survivor.connect(otherAccounts[0]).makeAPick(0);
+      await expect(
+        survivor.connect(otherAccounts[0]).makeAPick(65, 0)
+      ).to.be.rejectedWith("Pick is not valid");
+
+      await survivor.connect(otherAccounts[0]).makeAPick(1, 0);
 
       await expect(
-        survivor.connect(otherAccounts[0]).makeAPick(0)
+        survivor.connect(otherAccounts[0]).makeAPick(1, 1)
       ).to.be.rejectedWith("Pick already exists");
 
-      await survivor.connect(otherAccounts[0]).makeAPick(1);
-      await survivor.connect(otherAccounts[0]).makeAPick(2);
-      await survivor.connect(otherAccounts[0]).makeAPick(3);
-      await survivor.connect(otherAccounts[0]).makeAPick(4);
-      await survivor.connect(otherAccounts[0]).makeAPick(5);
-      await survivor.connect(otherAccounts[0]).makeAPick(6);
-      await survivor.connect(otherAccounts[0]).makeAPick(7);
-      await survivor.connect(otherAccounts[0]).makeAPick(8);
-      await survivor.connect(otherAccounts[0]).makeAPick(9);
+      await survivor.connect(otherAccounts[0]).makeAPick(2, 1);
+      await survivor.connect(otherAccounts[0]).makeAPick(3, 2);
+      await survivor.connect(otherAccounts[0]).makeAPick(4, 3);
+      await survivor.connect(otherAccounts[0]).makeAPick(5, 4);
+      await survivor.connect(otherAccounts[0]).makeAPick(6, 5);
+      await survivor.connect(otherAccounts[0]).makeAPick(7, 6);
+      await survivor.connect(otherAccounts[0]).makeAPick(8, 7);
+      await survivor.connect(otherAccounts[0]).makeAPick(9, 8);
+      await survivor.connect(otherAccounts[0]).makeAPick(10, 9);
 
       const picks = await survivor
         .connect(otherAccounts[0])
         .getPoolEntryPicks(otherAccounts[0].address);
 
-      expect(picks).to.deep.equal([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+      expect(picks).to.deep.equal([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
 
       await expect(
-        survivor.connect(otherAccounts[0]).makeAPick(10)
-      ).to.be.revertedWith("Too many picks, use editPick");
+        survivor.connect(otherAccounts[0]).makeAPick(11, 10)
+      ).to.be.revertedWithPanic();
     });
 
     it("should handle making a pick for eliminated pool entry", async () => {
@@ -343,14 +343,12 @@ describe("Survivor", function () {
 
       await survivor.closeRegistration();
 
-      await survivor.setDay(1);
-
-      await survivor.connect(otherAccounts[0]).makeAPick(4);
+      await survivor.connect(otherAccounts[0]).makeAPick(4, 0);
 
       await survivor.updateEliminatedTeams([4]);
 
       await expect(
-        survivor.connect(otherAccounts[0]).makeAPick(0)
+        survivor.connect(otherAccounts[0]).makeAPick(12, 1)
       ).to.be.revertedWith("Pool entry is eliminated");
     });
   });
@@ -388,23 +386,25 @@ describe("Survivor", function () {
     await survivor.connect(otherAccounts[0]).registerPoolEntry("slamma jamma");
 
     await expect(
-      survivor.connect(otherAccounts[0]).editPick(1, 1)
-    ).to.be.rejectedWith("Registration must be closed in order to edit a pick");
+      survivor.connect(otherAccounts[0]).makeAPick(1, 0)
+    ).to.be.rejectedWith(
+      "Registration must be closed in order to make or edit a pick"
+    );
 
     await survivor.closeRegistration();
 
-    await survivor.connect(otherAccounts[0]).makeAPick(0);
+    await survivor.connect(otherAccounts[0]).makeAPick(17, 0);
 
     const picks1 = await survivor
       .connect(otherAccounts[0])
       .getPoolEntryPicks(otherAccounts[0].address);
 
-    expect(picks1[0]).to.equal(0);
+    expect(picks1[0]).to.equal(17);
 
-    await survivor.connect(otherAccounts[0]).editPick(4, 1);
+    await survivor.connect(otherAccounts[0]).makeAPick(4, 0);
 
     await expect(
-      survivor.connect(otherAccounts[1]).editPick(1, 1)
+      survivor.connect(otherAccounts[1]).makeAPick(5, 0)
     ).to.be.revertedWith("Pool entry does not exist");
 
     const picks2 = await survivor
@@ -413,16 +413,16 @@ describe("Survivor", function () {
 
     expect(picks2[0]).to.equal(4);
 
-    await survivor.setDay(2);
+    await survivor.setDay(1);
 
     await expect(
-      survivor.connect(otherAccounts[0]).editPick(1, 1)
+      survivor.connect(otherAccounts[0]).makeAPick(1, 0)
     ).to.be.revertedWith("Invalid day");
 
     await survivor.updateEliminatedTeams([4]);
 
     await expect(
-      survivor.connect(otherAccounts[0]).editPick(1, 1)
+      survivor.connect(otherAccounts[0]).makeAPick(1, 1)
     ).to.be.revertedWith("Pool entry is eliminated");
   });
 
@@ -431,11 +431,11 @@ describe("Survivor", function () {
       deploySurvivorFixture
     );
 
+    await survivor.openRegistration();
+
     await expect(
       survivor.connect(otherAccounts[0]).setDay(1)
     ).to.be.revertedWith("Ownable: caller is not the owner");
-
-    await survivor.openRegistration();
 
     await expect(survivor.setDay(1)).to.be.revertedWith(
       "Registration must be closed in order to set day"
