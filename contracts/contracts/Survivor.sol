@@ -2,6 +2,7 @@
 pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract Survivor is Ownable {
     struct PoolEntry {
@@ -11,6 +12,7 @@ contract Survivor is Ownable {
         bool isRegistered;
     }
 
+    IERC20 token = IERC20(0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174);
     address[] public poolEntryAddresses;
     bool public isRegistrationOpen = false;
     uint256 public day = 0;
@@ -19,12 +21,18 @@ contract Survivor is Ownable {
 
     function registerPoolEntry(string memory _poolEntryName) public {
         require(isRegistrationOpen, "Registration is closed");
+        require(getAllowance() >= 10000000, "Not enough funds approved for transfer");
         PoolEntry memory newPoolEntry;
         newPoolEntry.poolEntryName = _poolEntryName;
         newPoolEntry.alive = true;
         newPoolEntry.isRegistered = true;
         poolEntries[msg.sender] = newPoolEntry;
         poolEntryAddresses.push(msg.sender);
+        token.transferFrom(msg.sender, address(this), 10000000);
+    }
+
+    function getAllowance() public view returns (uint256) {
+        return token.allowance(msg.sender, address(this));
     }
 
     function resetSurvivorPool() public onlyOwner {

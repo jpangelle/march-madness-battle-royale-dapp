@@ -1,17 +1,42 @@
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
 import { ethers } from "hardhat";
+import usdcAbi from "./usdc-abi.json";
+
+const USDC_WHALE_1 = "0xF977814e90dA44bFA03b6295A0616a897441aceC";
+const USDC_WHALE_2 = "0xe7804c37c13166fF0b37F5aE0BB07A3aEbb6e245";
+const USDC_CONTRACT_ADDRESS = "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174";
+
+const deploySurvivorFixture = async () => {
+  const [owner] = await ethers.getSigners();
+  const impersonatedSigner1 = await ethers.getImpersonatedSigner(USDC_WHALE_1);
+  const impersonatedSigner2 = await ethers.getImpersonatedSigner(USDC_WHALE_2);
+
+  const SurvivorFactory = await ethers.getContractFactory("Survivor");
+  const survivor = await SurvivorFactory.deploy();
+
+  return {
+    survivor,
+    owner,
+    otherAccounts: [impersonatedSigner1, impersonatedSigner2],
+  };
+};
+
+const approveUSDCTokens = async (
+  signer: SignerWithAddress,
+  spender: string
+) => {
+  const usdcContract = new ethers.Contract(
+    USDC_CONTRACT_ADDRESS,
+    usdcAbi,
+    signer
+  );
+
+  await usdcContract.approve(spender, 10000000);
+};
 
 describe("Survivor", function () {
-  async function deploySurvivorFixture() {
-    const [owner, ...otherAccounts] = await ethers.getSigners();
-
-    const Survivor = await ethers.getContractFactory("Survivor");
-    const survivor = await Survivor.deploy();
-
-    return { survivor, owner, otherAccounts };
-  }
-
   it("should handle registration status", async function () {
     const { survivor, otherAccounts } = await loadFixture(
       deploySurvivorFixture
@@ -52,6 +77,12 @@ describe("Survivor", function () {
 
     await survivor.openRegistration();
 
+    await expect(
+      survivor.connect(otherAccounts[0]).registerPoolEntry("slamma jamma")
+    ).to.be.revertedWith("Not enough funds approved for transfer");
+
+    await approveUSDCTokens(otherAccounts[0], survivor.address);
+
     await survivor.connect(otherAccounts[0]).registerPoolEntry("slamma jamma");
 
     const [entryName, alive, isRegistered] = await survivor.poolEntries(
@@ -72,6 +103,8 @@ describe("Survivor", function () {
     );
 
     await survivor.openRegistration();
+
+    await approveUSDCTokens(otherAccounts[0], survivor.address);
 
     await survivor.connect(otherAccounts[0]).registerPoolEntry("slamma jamma");
 
@@ -116,6 +149,8 @@ describe("Survivor", function () {
 
     await survivor.openRegistration();
 
+    await approveUSDCTokens(otherAccounts[0], survivor.address);
+
     await survivor.connect(otherAccounts[0]).registerPoolEntry("slamma jamma");
 
     await expect(
@@ -142,6 +177,8 @@ describe("Survivor", function () {
       );
 
       await survivor.openRegistration();
+
+      await approveUSDCTokens(otherAccounts[0], survivor.address);
 
       await survivor
         .connect(otherAccounts[0])
@@ -183,6 +220,8 @@ describe("Survivor", function () {
 
       await survivor.openRegistration();
 
+      await approveUSDCTokens(otherAccounts[0], survivor.address);
+
       await survivor
         .connect(otherAccounts[0])
         .registerPoolEntry("slamma jamma");
@@ -217,6 +256,8 @@ describe("Survivor", function () {
       ).to.be.revertedWith(
         "Registration must be closed in order to make a pick"
       );
+
+      await approveUSDCTokens(otherAccounts[0], survivor.address);
 
       await survivor
         .connect(otherAccounts[0])
@@ -266,6 +307,8 @@ describe("Survivor", function () {
 
       await survivor.openRegistration();
 
+      await approveUSDCTokens(otherAccounts[0], survivor.address);
+
       await survivor
         .connect(otherAccounts[0])
         .registerPoolEntry("slamma jamma");
@@ -287,6 +330,9 @@ describe("Survivor", function () {
 
     await survivor.openRegistration();
 
+    await approveUSDCTokens(otherAccounts[0], survivor.address);
+    await approveUSDCTokens(otherAccounts[1], survivor.address);
+
     await survivor.connect(otherAccounts[0]).registerPoolEntry("slamma jamma");
     await survivor.connect(otherAccounts[1]).registerPoolEntry("basketballa");
 
@@ -299,12 +345,13 @@ describe("Survivor", function () {
   });
 
   it("should edit pick", async () => {
-    // require(poolEntries[msg.sender].isRegistered, "Pool entry does not exist");
     const { survivor, otherAccounts } = await loadFixture(
       deploySurvivorFixture
     );
 
     await survivor.openRegistration();
+
+    await approveUSDCTokens(otherAccounts[0], survivor.address);
 
     await survivor.connect(otherAccounts[0]).registerPoolEntry("slamma jamma");
 

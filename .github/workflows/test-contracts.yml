@@ -32,3 +32,4 @@ jobs:
         run: npm test
         env:
           HOT_WALLET_PRIVATE_KEY: ${{ secrets.HOT_WALLET_PRIVATE_KEY }}
+          ALCHEMY_POLYGON_MAINNET_API_KEY: ${{ secrets.ALCHEMY_POLYGON_MAINNET_API_KEY }}

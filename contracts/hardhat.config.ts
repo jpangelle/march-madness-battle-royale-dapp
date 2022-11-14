@@ -9,7 +9,12 @@ dotenv.config();
 const config: HardhatUserConfig = {
   defaultNetwork: "mumbai",
   networks: {
-    hardhat: {},
+    hardhat: {
+      forking: {
+        url: `https://polygon-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_POLYGON_MAINNET_API_KEY}`,
+        blockNumber: 35581826,
+      },
+    },
     mumbai: {
       url: process.env.INFURA_ENDPOINT_POLYGON_MUMBAI || "",
       accounts: [process.env.HOT_WALLET_PRIVATE_KEY],
