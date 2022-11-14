@@ -7,7 +7,6 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 contract Survivor is Ownable {
     struct PoolEntry {
         string poolEntryName;
-        bool alive;
         uint256[] picks;
         bool isRegistered;
     }
@@ -16,6 +15,7 @@ contract Survivor is Ownable {
     address[] public poolEntryAddresses;
     bool public isRegistrationOpen = false;
     uint256 public day = 0;
+    uint256[] public eliminatedTeams;
 
     mapping(address => PoolEntry) public poolEntries;
 
@@ -24,7 +24,6 @@ contract Survivor is Ownable {
         require(getAllowance() >= 10000000, "Not enough funds approved for transfer");
         PoolEntry memory newPoolEntry;
         newPoolEntry.poolEntryName = _poolEntryName;
-        newPoolEntry.alive = true;
         newPoolEntry.isRegistered = true;
         poolEntries[msg.sender] = newPoolEntry;
         poolEntryAddresses.push(msg.sender);
@@ -41,6 +40,7 @@ contract Survivor is Ownable {
             delete poolEntries[poolEntryAddresses[i]];
         }
         delete poolEntryAddresses;
+        delete eliminatedTeams;
         day = 0;
     }
 
@@ -62,7 +62,7 @@ contract Survivor is Ownable {
     function makeAPick(uint256 _pick) public {
         require(!isRegistrationOpen, "Registration must be closed in order to make a pick");
         require(poolEntries[msg.sender].isRegistered, "Pool entry does not exist");
-        require(poolEntries[msg.sender].alive, "Pool entry is eliminated");
+        require(!isEntryEliminated(msg.sender), "Pool entry is eliminated");
         require(poolEntries[msg.sender].picks.length < 10, "Too many picks, use editPick");
         require(_pick <= 63, "Pick is not valid");
         for (uint256 i = 0; i < poolEntries[msg.sender].picks.length; i++) {
@@ -74,22 +74,22 @@ contract Survivor is Ownable {
     function editPick(uint256 _pick, uint256 _day) public  {
         require(!isRegistrationOpen, "Registration must be closed in order to edit a pick");
         require(poolEntries[msg.sender].isRegistered, "Pool entry does not exist");
-        require(poolEntries[msg.sender].alive, "Pool entry is eliminated");
+        require(!isEntryEliminated(msg.sender), "Pool entry is eliminated");
         require(_day >= day && _day <= 10, "Invalid day");
         poolEntries[msg.sender].picks[_day - 1] = _pick;
     }
 
-    function eliminatePoolEntry(address _address) public onlyOwner {
-        require(poolEntries[_address].isRegistered, "Pool entry does not exist");
-        require(poolEntries[_address].alive, "Pool entry is already eliminated");
-        poolEntries[_address].alive = false;
+    function updateEliminatedTeams(uint256[] memory _eliminatedTeams) public onlyOwner{
+        for (uint256 i = 0; i < _eliminatedTeams.length; i++) {
+            eliminatedTeams.push(_eliminatedTeams[i]);
+        }
     }
 
     function payoutWinner(address payable _address, uint256 _amount) public onlyOwner {
         require(poolEntries[_address].isRegistered, "Pool entry does not exist");
-        require(poolEntries[_address].alive, "Pool entry is eliminated");
-        require(address(this).balance >= _amount, "Contract does not have enough funds");
-        _address.transfer(_amount);
+        require(!isEntryEliminated(_address), "Pool entry is eliminated");
+        require(token.balanceOf(address(this)) >= _amount, "Contract does not have enough funds");
+        token.transfer(_address, _amount);
     }
 
     function getPoolEntryPicks(address _address) public view returns (uint256[] memory) {
@@ -98,6 +98,21 @@ contract Survivor is Ownable {
 
     function getPoolEntries() public view returns (address[] memory) {
         return poolEntryAddresses;
+    }
+
+    function getEliminatedTeams() public view returns (uint256[] memory) {
+        return eliminatedTeams;
+    }
+
+    function isEntryEliminated(address _address) public view returns (bool) {
+        for (uint256 i = 0; i < poolEntries[_address].picks.length; i++) {
+            for (uint256 j = 0; j < eliminatedTeams.length; j++) {
+                if (poolEntries[_address].picks[i] == eliminatedTeams[j] && i <= day - 1) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     receive() external payable {}

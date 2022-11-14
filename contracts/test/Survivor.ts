@@ -8,6 +8,13 @@ const USDC_WHALE_1 = "0xF977814e90dA44bFA03b6295A0616a897441aceC";
 const USDC_WHALE_2 = "0xe7804c37c13166fF0b37F5aE0BB07A3aEbb6e245";
 const USDC_CONTRACT_ADDRESS = "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174";
 
+const getUSDCContract = (signer?: SignerWithAddress) =>
+  new ethers.Contract(
+    USDC_CONTRACT_ADDRESS,
+    usdcAbi,
+    signer || ethers.provider
+  );
+
 const deploySurvivorFixture = async () => {
   const [owner] = await ethers.getSigners();
   const impersonatedSigner1 = await ethers.getImpersonatedSigner(USDC_WHALE_1);
@@ -27,11 +34,7 @@ const approveUSDCTokens = async (
   signer: SignerWithAddress,
   spender: string
 ) => {
-  const usdcContract = new ethers.Contract(
-    USDC_CONTRACT_ADDRESS,
-    usdcAbi,
-    signer
-  );
+  const usdcContract = getUSDCContract(signer);
 
   await usdcContract.approve(spender, 10000000);
 };
@@ -85,7 +88,7 @@ describe("Survivor", function () {
 
     await survivor.connect(otherAccounts[0]).registerPoolEntry("slamma jamma");
 
-    const [entryName, alive, isRegistered] = await survivor.poolEntries(
+    const [entryName, isRegistered] = await survivor.poolEntries(
       otherAccounts[0].address
     );
 
@@ -93,7 +96,6 @@ describe("Survivor", function () {
       otherAccounts[0].address
     );
     expect(entryName).to.equal("slamma jamma");
-    expect(alive).to.equal(true);
     expect(isRegistered).to.equal(true);
   });
 
@@ -108,12 +110,11 @@ describe("Survivor", function () {
 
     await survivor.connect(otherAccounts[0]).registerPoolEntry("slamma jamma");
 
-    const [entryName1, alive1, isRegistered1] = await survivor.poolEntries(
+    const [entryName1, isRegistered1] = await survivor.poolEntries(
       otherAccounts[0].address
     );
 
     expect(entryName1).to.equal("slamma jamma");
-    expect(alive1).to.equal(true);
     expect(isRegistered1).to.equal(true);
 
     await expect(survivor.resetSurvivorPool()).to.be.revertedWith(
@@ -128,22 +129,22 @@ describe("Survivor", function () {
 
     await survivor.resetSurvivorPool();
 
-    const [entryName2, alive2, isRegistered2] = await survivor.poolEntries(
+    const [entryName2, isRegistered2] = await survivor.poolEntries(
       otherAccounts[0].address
     );
 
     const day = await survivor.day();
 
     await expect(survivor.poolEntryAddresses(0)).to.be.revertedWithoutReason();
+    await expect(survivor.eliminatedTeams(0)).to.be.revertedWithoutReason();
 
     expect(entryName2).to.equal("");
-    expect(alive2).to.equal(false);
     expect(isRegistered2).to.equal(false);
     expect(day).to.equal(0);
   });
 
-  it("should eliminate pool entry", async () => {
-    const { survivor, owner, otherAccounts } = await loadFixture(
+  it("should update eliminated teams", async () => {
+    const { survivor, otherAccounts } = await loadFixture(
       deploySurvivorFixture
     );
 
@@ -153,24 +154,48 @@ describe("Survivor", function () {
 
     await survivor.connect(otherAccounts[0]).registerPoolEntry("slamma jamma");
 
+    await survivor.closeRegistration();
+
+    await survivor.setDay(1);
+
+    await survivor.connect(otherAccounts[0]).makeAPick(4);
+
     await expect(
-      survivor
-        .connect(otherAccounts[0])
-        .eliminatePoolEntry(otherAccounts[0].address)
+      survivor.connect(otherAccounts[0]).updateEliminatedTeams([13])
     ).to.be.revertedWith("Ownable: caller is not the owner");
 
-    await expect(survivor.eliminatePoolEntry(owner.address)).to.be.revertedWith(
-      "Pool entry does not exist"
+    const isEliminated1 = await survivor.isEntryEliminated(
+      otherAccounts[0].address
     );
 
-    await survivor.eliminatePoolEntry(otherAccounts[0].address);
+    expect(isEliminated1).to.be.false;
 
-    await expect(
-      survivor.eliminatePoolEntry(otherAccounts[0].address)
-    ).to.be.revertedWith("Pool entry is already eliminated");
+    await survivor.updateEliminatedTeams([13]);
+
+    const isEliminated2 = await survivor.isEntryEliminated(
+      otherAccounts[0].address
+    );
+
+    expect(isEliminated2).to.be.false;
+
+    await survivor.setDay(2);
+
+    await survivor.connect(otherAccounts[0]).makeAPick(7);
+
+    await survivor.updateEliminatedTeams([7]);
+
+    const isEliminated3 = await survivor.isEntryEliminated(
+      otherAccounts[0].address
+    );
+
+    expect(isEliminated3).to.be.true;
+
+    const eliminatedTeams = await survivor.getEliminatedTeams();
+
+    expect(eliminatedTeams).to.deep.equal([13, 7]);
   });
 
-  describe("payout out winner", async () => {
+  describe("payout winner", async () => {
     it("should payout winner", async () => {
       const { survivor, owner, otherAccounts } = await loadFixture(
         deploySurvivorFixture
@@ -187,7 +212,7 @@ describe("Survivor", function () {
       await expect(
         survivor
           .connect(otherAccounts[0])
-          .payoutWinner(otherAccounts[0].address, 1)
+          .payoutWinner(otherAccounts[0].address, 10000000)
       ).to.be.revertedWith("Ownable: caller is not the owner");
 
       await expect(
@@ -195,26 +220,26 @@ describe("Survivor", function () {
       ).to.be.revertedWith("Pool entry does not exist");
 
       await expect(
-        survivor.payoutWinner(
-          otherAccounts[0].address,
-          ethers.utils.parseEther("1")
-        )
+        survivor.payoutWinner(otherAccounts[0].address, 1000000000)
       ).to.be.revertedWith("Contract does not have enough funds");
 
-      await owner.sendTransaction({
-        to: survivor.address,
-        value: ethers.utils.parseEther("2"),
-        gasLimit: 21055,
-      });
+      const usdcContract = getUSDCContract();
 
-      await survivor.payoutWinner(
-        otherAccounts[0].address,
-        ethers.utils.parseEther("1")
+      const winnerBalance1 = await usdcContract.balanceOf(
+        otherAccounts[0].address
       );
+
+      await survivor.payoutWinner(otherAccounts[0].address, 10000000);
+
+      const winnerBalance2 = await usdcContract.balanceOf(
+        otherAccounts[0].address
+      );
+
+      expect(winnerBalance2.sub(winnerBalance1)).to.equal(10000000);
     });
 
     it("should handle paying out for eliminated pool entry", async () => {
-      const { survivor, owner, otherAccounts } = await loadFixture(
+      const { survivor, otherAccounts } = await loadFixture(
         deploySurvivorFixture
       );
 
@@ -226,19 +251,22 @@ describe("Survivor", function () {
         .connect(otherAccounts[0])
         .registerPoolEntry("slamma jamma");
 
-      await survivor.eliminatePoolEntry(otherAccounts[0].address);
+      await survivor.closeRegistration();
 
-      await owner.sendTransaction({
-        to: survivor.address,
-        value: ethers.utils.parseEther("2"),
-        gasLimit: 21055,
-      });
+      await survivor.setDay(1);
+
+      await survivor.connect(otherAccounts[0]).makeAPick(4);
+
+      await survivor.updateEliminatedTeams([4, 12]);
+
+      const isEntryEliminated = await survivor.isEntryEliminated(
+        otherAccounts[0].address
+      );
+
+      expect(isEntryEliminated).to.be.true;
 
       await expect(
-        survivor.payoutWinner(
-          otherAccounts[0].address,
-          ethers.utils.parseEther("1")
-        )
+        survivor.payoutWinner(otherAccounts[0].address, 10000000)
       ).to.be.revertedWith("Pool entry is eliminated");
     });
   });
@@ -315,7 +343,11 @@ describe("Survivor", function () {
 
       await survivor.closeRegistration();
 
-      await survivor.eliminatePoolEntry(otherAccounts[0].address);
+      await survivor.setDay(1);
+
+      await survivor.connect(otherAccounts[0]).makeAPick(4);
+
+      await survivor.updateEliminatedTeams([4]);
 
       await expect(
         survivor.connect(otherAccounts[0]).makeAPick(0)
@@ -369,7 +401,7 @@ describe("Survivor", function () {
 
     expect(picks1[0]).to.equal(0);
 
-    await survivor.connect(otherAccounts[0]).editPick(1, 1);
+    await survivor.connect(otherAccounts[0]).editPick(4, 1);
 
     await expect(
       survivor.connect(otherAccounts[1]).editPick(1, 1)
@@ -379,7 +411,7 @@ describe("Survivor", function () {
       .connect(otherAccounts[0])
       .getPoolEntryPicks(otherAccounts[0].address);
 
-    expect(picks2[0]).to.equal(1);
+    expect(picks2[0]).to.equal(4);
 
     await survivor.setDay(2);
 
@@ -387,7 +419,7 @@ describe("Survivor", function () {
       survivor.connect(otherAccounts[0]).editPick(1, 1)
     ).to.be.revertedWith("Invalid day");
 
-    await survivor.eliminatePoolEntry(otherAccounts[0].address);
+    await survivor.updateEliminatedTeams([4]);
 
     await expect(
       survivor.connect(otherAccounts[0]).editPick(1, 1)
