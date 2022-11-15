@@ -46,6 +46,7 @@ contract BattleRoyale is AccessControl {
     function registerPoolEntry(string memory _poolEntryName) public {
         require(isRegistrationOpen, "Registration is closed");
         require(getAllowance() >= 10000000, "Not enough funds approved for transfer");
+
         PoolEntry memory newPoolEntry;
         newPoolEntry.poolEntryName = _poolEntryName;
         newPoolEntry.isRegistered = true;
@@ -60,6 +61,7 @@ contract BattleRoyale is AccessControl {
 
     function resetBattleRoyalePool() public onlyRole(ADMIN_ROLE) {
         require(!isRegistrationOpen, "Registration must be closed in order to reset");
+
         incrementVersion();
         delete eliminatedTeams;
         day = 0;
@@ -68,18 +70,21 @@ contract BattleRoyale is AccessControl {
 
     function setDay(uint256 _day) public onlyRole(ADMIN_ROLE) {
         require(!isRegistrationOpen, "Registration must be closed in order to set day");
+
         day = _day;
         emit DaySet(_day);
     }
 
     function openRegistration() public onlyRole(ADMIN_ROLE) {
         require(!isRegistrationOpen, "Registration is already open");
+
         isRegistrationOpen = true;
         emit RegistrationOpened();
     }
 
     function closeRegistration() public onlyRole(ADMIN_ROLE) {
         require(isRegistrationOpen, "Registration is already closed");
+
         isRegistrationOpen = false;
         emit RegistrationClosed();
     }
@@ -101,6 +106,7 @@ contract BattleRoyale is AccessControl {
 
     function updateEliminatedTeams(uint256[] memory _eliminatedTeams) public onlyRole(ADMIN_ROLE) {
         require(eliminatedTeams.length + _eliminatedTeams.length < 64, "Too many teams eliminated");
+
         for (uint256 i = 0; i < _eliminatedTeams.length; i++) {
             require(_eliminatedTeams[i] != 0 && _eliminatedTeams[i] <= 64, "Invalid team");
             eliminatedTeams.push(_eliminatedTeams[i]);
@@ -112,6 +118,7 @@ contract BattleRoyale is AccessControl {
         require(poolEntries[version][_address].isRegistered, "Pool entry does not exist");
         require(!isEntryEliminated(_address), "Pool entry is eliminated");
         require(usdc.balanceOf(address(this)) >= _amount, "Contract does not have enough funds");
+
         usdc.transfer(_address, _amount);
         emit WinnerPaidout(_address, _amount);
     }
@@ -119,7 +126,6 @@ contract BattleRoyale is AccessControl {
     function getPoolEntryPicks(address _address) public view returns (uint256[10] memory) {
         return poolEntries[version][_address].picks;
     }
-
 
     function getEliminatedTeams() public view returns (uint256[] memory) {
         return eliminatedTeams;
