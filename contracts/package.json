@@ -1,9 +1,9 @@
 {
   "name": "battle-royale-contracts",
   "scripts": {
-    "deploy-verify": "npm run deploy && sleep 20 && npm run verify",
-    "deploy": "hardhat run scripts/deploy.ts | tee temp_address.txt",
-    "verify": "hardhat verify $(tail -c 43 temp_address.txt) && rm temp_address.txt",
+    "deploy-verify": "npm run deploy | tee temp_address.txt && sleep 20 && npm run verify && rm temp_address.txt",
+    "deploy": "hardhat run scripts/deploy.ts",
+    "verify": "hardhat verify --constructor-args scripts/arguments.ts $(tail -c 43 temp_address.txt)",
     "test": "hardhat test --network hardhat",
     "coverage": "hardhat coverage --testfiles \"./test/*.ts\" --network hardhat"
   },

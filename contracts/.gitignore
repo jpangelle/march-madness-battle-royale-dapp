@@ -5,6 +5,7 @@ coverage.json
 typechain
 typechain-types
 .DS_Store
+temp_address.txt
 
 #Hardhat files
 cache

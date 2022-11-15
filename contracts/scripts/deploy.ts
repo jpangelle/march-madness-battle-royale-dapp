@@ -6,7 +6,7 @@ dotenv.config();
 async function main() {
   const BattleRoyaleFactory = await ethers.getContractFactory("BattleRoyale");
   const battleRoyalePool = await BattleRoyaleFactory.deploy([
-    process.env.HOT_WALLET_PRIVATE_KEY,
+    "0x89E27f651186DE46D656f8Cd55bA9620dc556320",
   ]);
 
   await battleRoyalePool.deployed();
