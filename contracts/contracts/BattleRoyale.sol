@@ -4,7 +4,7 @@ pragma solidity ^0.8.9;
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract Survivor is AccessControl {
+contract BattleRoyale is AccessControl {
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
 
     struct PoolEntry {
@@ -24,7 +24,7 @@ contract Survivor is AccessControl {
     mapping(address => PoolEntry) public poolEntries;
 
     event Registered(address poolEntryAddress, string poolEntryName);
-    event SurvivorPoolReset();
+    event BattleRoyalePoolReset();
     event DaySet(uint256 day);
     event RegistrationOpened();
     event RegistrationClosed();
@@ -58,7 +58,7 @@ contract Survivor is AccessControl {
         return token.allowance(msg.sender, address(this));
     }
 
-    function resetSurvivorPool() public onlyRole(ADMIN_ROLE) {
+    function resetBattleRoyalePool() public onlyRole(ADMIN_ROLE) {
         require(!isRegistrationOpen, "Registration must be closed in order to reset");
         for (uint i = 0; i < poolEntryAddresses.length; i++) {
             delete poolEntries[poolEntryAddresses[i]];
@@ -66,7 +66,7 @@ contract Survivor is AccessControl {
         delete poolEntryAddresses;
         delete eliminatedTeams;
         day = 0;
-        emit SurvivorPoolReset();
+        emit BattleRoyalePoolReset();
     }
 
     function setDay(uint256 _day) public onlyRole(ADMIN_ROLE) {

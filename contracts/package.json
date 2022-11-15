@@ -1,5 +1,5 @@
 {
-  "name": "survivor",
+  "name": "battle-royale-contracts",
   "scripts": {
     "deploy-verify": "npm run deploy && sleep 20 && npm run verify",
     "deploy": "hardhat run scripts/deploy.ts | tee temp_address.txt",

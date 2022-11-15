@@ -1,12 +1,17 @@
 import { ethers } from "hardhat";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 async function main() {
-  const Survivor = await ethers.getContractFactory("Survivor");
-  const survivor = await Survivor.deploy();
+  const BattleRoyaleFactory = await ethers.getContractFactory("BattleRoyale");
+  const battleRoyalePool = await BattleRoyaleFactory.deploy([
+    process.env.HOT_WALLET_PRIVATE_KEY,
+  ]);
 
-  await survivor.deployed();
+  await battleRoyalePool.deployed();
 
-  console.log(`Deployed to ${survivor.address}`);
+  console.log(`Deployed to ${battleRoyalePool.address}`);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
