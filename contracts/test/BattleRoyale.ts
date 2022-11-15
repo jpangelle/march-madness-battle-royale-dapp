@@ -124,13 +124,15 @@ describe("Battle Royale", () => {
       .connect(otherAccounts[0])
       .registerPoolEntry("slamma jamma");
 
+    const version = await battleRoyalePool.version();
+
+    expect(version).to.equal(0);
+
     const [entryName, isRegistered] = await battleRoyalePool.poolEntries(
+      version,
       otherAccounts[0].address
     );
 
-    expect(await battleRoyalePool.poolEntryAddresses(0)).to.equal(
-      otherAccounts[0].address
-    );
     expect(entryName).to.equal("slamma jamma");
     expect(isRegistered).to.equal(true);
   });
@@ -148,7 +150,12 @@ describe("Battle Royale", () => {
       .connect(otherAccounts[0])
       .registerPoolEntry("slamma jamma");
 
+    const version1 = await battleRoyalePool.version();
+
+    expect(version1).to.equal(0);
+
     const [entryName1, isRegistered1] = await battleRoyalePool.poolEntries(
+      version1,
       otherAccounts[0].address
     );
 
@@ -169,15 +176,17 @@ describe("Battle Royale", () => {
 
     await battleRoyalePool.resetBattleRoyalePool();
 
+    const version2 = await battleRoyalePool.version();
+
+    expect(version2).to.equal(1);
+
     const [entryName2, isRegistered2] = await battleRoyalePool.poolEntries(
+      version2,
       otherAccounts[0].address
     );
 
     const day = await battleRoyalePool.day();
 
-    await expect(
-      battleRoyalePool.poolEntryAddresses(0)
-    ).to.be.revertedWithoutReason();
     await expect(
       battleRoyalePool.eliminatedTeams(0)
     ).to.be.revertedWithoutReason();
@@ -228,6 +237,10 @@ describe("Battle Royale", () => {
 
     await battleRoyalePool.connect(otherAccounts[0]).makeAPick(7, 1);
 
+    await expect(
+      battleRoyalePool.updateEliminatedTeams([65])
+    ).to.be.revertedWith("Invalid team");
+
     await battleRoyalePool.updateEliminatedTeams([7]);
 
     const isEliminated3 = await battleRoyalePool.isEntryEliminated(
@@ -239,6 +252,12 @@ describe("Battle Royale", () => {
     const eliminatedTeams = await battleRoyalePool.getEliminatedTeams();
 
     expect(eliminatedTeams).to.deep.equal([13, 7]);
+
+    await expect(
+      battleRoyalePool.updateEliminatedTeams(
+        Array.from({ length: 64 }, (_, i) => i + 1)
+      )
+    ).to.be.revertedWith("Too many teams eliminated");
   });
 
   describe("payout winner", () => {
@@ -406,29 +425,26 @@ describe("Battle Royale", () => {
     });
   });
 
-  it("should get pool entries", async () => {
+  it("should increment version", async () => {
     const { battleRoyalePool, otherAccounts } = await loadFixture(
       deployBattleRoyalePoolFixture
     );
 
-    await battleRoyalePool.openRegistration();
+    const version1 = await battleRoyalePool.version();
 
-    await approveUSDCTokens(otherAccounts[0], battleRoyalePool.address);
-    await approveUSDCTokens(otherAccounts[1], battleRoyalePool.address);
+    expect(version1).to.equal(0);
 
-    await battleRoyalePool
-      .connect(otherAccounts[0])
-      .registerPoolEntry("slamma jamma");
-    await battleRoyalePool
-      .connect(otherAccounts[1])
-      .registerPoolEntry("basketballa");
+    await expect(
+      battleRoyalePool.connect(otherAccounts[0]).incrementVersion()
+    ).to.be.revertedWith(
+      "AccessControl: account 0xf977814e90da44bfa03b6295a0616a897441acec is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775"
+    );
 
-    const poolEntries = await battleRoyalePool.getPoolEntries();
+    await battleRoyalePool.incrementVersion();
 
-    expect(poolEntries).to.deep.equal([
-      otherAccounts[0].address,
-      otherAccounts[1].address,
-    ]);
+    const version2 = await battleRoyalePool.version();
+
+    expect(version2).to.equal(1);
   });
 
   it("should edit pick", async () => {
