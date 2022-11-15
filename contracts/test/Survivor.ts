@@ -16,16 +16,19 @@ const getUSDCContract = (signer?: SignerWithAddress) =>
   );
 
 const deploySurvivorFixture = async () => {
-  const [owner] = await ethers.getSigners();
+  const [...admins] = await ethers.getSigners();
   const impersonatedSigner1 = await ethers.getImpersonatedSigner(USDC_WHALE_1);
   const impersonatedSigner2 = await ethers.getImpersonatedSigner(USDC_WHALE_2);
 
   const SurvivorFactory = await ethers.getContractFactory("Survivor");
-  const survivor = await SurvivorFactory.deploy();
+  const survivor = await SurvivorFactory.deploy([
+    admins[0].address,
+    admins[1].address,
+  ]);
 
   return {
     survivor,
-    owner,
+    admins: [admins[0], admins[1]],
     otherAccounts: [impersonatedSigner1, impersonatedSigner2],
   };
 };
@@ -39,8 +42,31 @@ const approveUSDCTokens = async (
   await usdcContract.approve(spender, 10000000);
 };
 
-describe("Survivor", function () {
-  it("should handle registration status", async function () {
+describe("Survivor", () => {
+  it("should grant admin roles", async () => {
+    const { survivor, admins, otherAccounts } = await loadFixture(
+      deploySurvivorFixture
+    );
+
+    const isAdmin1 = await survivor.hasRole(
+      survivor.ADMIN_ROLE(),
+      admins[0].address
+    );
+    const isAdmin2 = await survivor.hasRole(
+      survivor.ADMIN_ROLE(),
+      admins[1].address
+    );
+    const isAdmin3 = await survivor.hasRole(
+      survivor.ADMIN_ROLE(),
+      otherAccounts[0].address
+    );
+
+    expect(isAdmin1).to.be.true;
+    expect(isAdmin2).to.be.true;
+    expect(isAdmin3).to.be.false;
+  });
+
+  it("should handle registration status", async () => {
     const { survivor, otherAccounts } = await loadFixture(
       deploySurvivorFixture
     );
@@ -49,7 +75,9 @@ describe("Survivor", function () {
 
     await expect(
       survivor.connect(otherAccounts[0]).openRegistration()
-    ).to.be.revertedWith("Ownable: caller is not the owner");
+    ).to.be.revertedWith(
+      "AccessControl: account 0xf977814e90da44bfa03b6295a0616a897441acec is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775"
+    );
 
     await survivor.openRegistration();
 
@@ -60,7 +88,9 @@ describe("Survivor", function () {
 
     await expect(
       survivor.connect(otherAccounts[0]).closeRegistration()
-    ).to.be.revertedWith("Ownable: caller is not the owner");
+    ).to.be.revertedWith(
+      "AccessControl: account 0xf977814e90da44bfa03b6295a0616a897441acec is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775"
+    );
 
     await survivor.closeRegistration();
     await expect(survivor.closeRegistration()).to.be.revertedWith(
@@ -69,7 +99,7 @@ describe("Survivor", function () {
     expect(await survivor.isRegistrationOpen()).to.be.false;
   });
 
-  it("should handle pool entry registration", async function () {
+  it("should handle pool entry registration", async () => {
     const { survivor, otherAccounts } = await loadFixture(
       deploySurvivorFixture
     );
@@ -99,7 +129,7 @@ describe("Survivor", function () {
     expect(isRegistered).to.equal(true);
   });
 
-  it("should reset survivor pool", async function () {
+  it("should reset survivor pool", async () => {
     const { survivor, otherAccounts } = await loadFixture(
       deploySurvivorFixture
     );
@@ -125,7 +155,9 @@ describe("Survivor", function () {
 
     await expect(
       survivor.connect(otherAccounts[0]).resetSurvivorPool()
-    ).to.be.revertedWith("Ownable: caller is not the owner");
+    ).to.be.revertedWith(
+      "AccessControl: account 0xf977814e90da44bfa03b6295a0616a897441acec is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775"
+    );
 
     await survivor.resetSurvivorPool();
 
@@ -160,7 +192,9 @@ describe("Survivor", function () {
 
     await expect(
       survivor.connect(otherAccounts[0]).updateEliminatedTeams([13])
-    ).to.be.revertedWith("Ownable: caller is not the owner");
+    ).to.be.revertedWith(
+      "AccessControl: account 0xf977814e90da44bfa03b6295a0616a897441acec is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775"
+    );
 
     const isEliminated1 = await survivor.isEntryEliminated(
       otherAccounts[0].address
@@ -193,9 +227,9 @@ describe("Survivor", function () {
     expect(eliminatedTeams).to.deep.equal([13, 7]);
   });
 
-  describe("payout winner", async () => {
+  describe("payout winner", () => {
     it("should payout winner", async () => {
-      const { survivor, owner, otherAccounts } = await loadFixture(
+      const { survivor, otherAccounts } = await loadFixture(
         deploySurvivorFixture
       );
 
@@ -211,10 +245,15 @@ describe("Survivor", function () {
         survivor
           .connect(otherAccounts[0])
           .payoutWinner(otherAccounts[0].address, 10000000)
-      ).to.be.revertedWith("Ownable: caller is not the owner");
+      ).to.be.revertedWith(
+        "AccessControl: account 0xf977814e90da44bfa03b6295a0616a897441acec is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775"
+      );
 
       await expect(
-        survivor.payoutWinner(owner.address, ethers.utils.parseEther("1"))
+        survivor.payoutWinner(
+          otherAccounts[1].address,
+          ethers.utils.parseEther("1")
+        )
       ).to.be.revertedWith("Pool entry does not exist");
 
       await expect(
@@ -267,7 +306,7 @@ describe("Survivor", function () {
     });
   });
 
-  describe("make a pick", async () => {
+  describe("make a pick", () => {
     it("should handle making a pick", async () => {
       const { survivor, otherAccounts } = await loadFixture(
         deploySurvivorFixture
@@ -435,7 +474,9 @@ describe("Survivor", function () {
 
     await expect(
       survivor.connect(otherAccounts[0]).setDay(1)
-    ).to.be.revertedWith("Ownable: caller is not the owner");
+    ).to.be.revertedWith(
+      "AccessControl: account 0xf977814e90da44bfa03b6295a0616a897441acec is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775"
+    );
 
     await expect(survivor.setDay(1)).to.be.revertedWith(
       "Registration must be closed in order to set day"
