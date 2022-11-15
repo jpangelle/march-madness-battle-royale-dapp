@@ -1,0 +1,60 @@
+specVersion: 0.0.2
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum/contract
+    name: BattleRoyale
+    network: mumbai
+    source:
+      address: "0x1b2938B81677637de4658Aa1D1cC8076951f984c"
+      abi: BattleRoyale
+      startBlock: 29158236
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.4
+      language: wasm/assemblyscript
+      entities:
+        - AdminRoleGranted
+        - BattleRoyalePoolReset
+        - ContractDeployed
+        - DaySet
+        - PickMade
+        - Registered
+        - RegistrationClosed
+        - RegistrationOpened
+        - RoleAdminChanged
+        - RoleGranted
+        - RoleRevoked
+        - TeamsEliminated
+        - WinnerPaidout
+      abis:
+        - name: BattleRoyale
+          file: ./abis/BattleRoyale.json
+      eventHandlers:
+        - event: AdminRoleGranted(address)
+          handler: handleAdminRoleGranted
+        - event: BattleRoyalePoolReset()
+          handler: handleBattleRoyalePoolReset
+        - event: ContractDeployed(address)
+          handler: handleContractDeployed
+        - event: DaySet(uint256)
+          handler: handleDaySet
+        - event: PickMade(address,uint256,uint256)
+          handler: handlePickMade
+        - event: Registered(address,string)
+          handler: handleRegistered
+        - event: RegistrationClosed()
+          handler: handleRegistrationClosed
+        - event: RegistrationOpened()
+          handler: handleRegistrationOpened
+        - event: RoleAdminChanged(indexed bytes32,indexed bytes32,indexed bytes32)
+          handler: handleRoleAdminChanged
+        - event: RoleGranted(indexed bytes32,indexed address,indexed address)
+          handler: handleRoleGranted
+        - event: RoleRevoked(indexed bytes32,indexed address,indexed address)
+          handler: handleRoleRevoked
+        - event: TeamsEliminated(uint256[])
+          handler: handleTeamsEliminated
+        - event: WinnerPaidout(address,uint256)
+          handler: handleWinnerPaidout
+      file: ./src/mapping.ts
