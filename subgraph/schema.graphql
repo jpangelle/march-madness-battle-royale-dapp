@@ -1,4 +1,4 @@
-type ExampleEntity @entity {
+type Admin @entity {
   id: ID!
   count: BigInt!
   adminAddress: Bytes! # address
