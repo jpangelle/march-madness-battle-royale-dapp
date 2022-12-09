@@ -4,7 +4,7 @@ import { useRouter } from 'next/router'
 /**
  * Constants & Helpers
  */
-export const WEBSITE_HOST_URL = 'https://marchmadnessbattleroyale.app/'
+export const WEBSITE_HOST_URL = 'http://localhost:3000'
 
 /**
  * Prop Types
