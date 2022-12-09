@@ -1,27 +1,68 @@
-import { AppProps } from 'next/app';
-import Head from 'next/head';
-import { MantineProvider } from '@mantine/core';
+import { ChakraProvider } from '@chakra-ui/react'
+import {
+  connectorsForWallets,
+  darkTheme,
+  getDefaultWallets,
+  RainbowKitProvider,
+} from '@rainbow-me/rainbowkit'
+import '@rainbow-me/rainbowkit/styles.css'
+import type { AppProps } from 'next/app'
+import { chain, configureChains, createClient, WagmiConfig } from 'wagmi'
+import { alchemyProvider } from 'wagmi/providers/alchemy'
+import { publicProvider } from 'wagmi/providers/public'
 
-export default function App(props: AppProps) {
-  const { Component, pageProps } = props;
+const ALCHEMY_API_KEY = process.env.NEXT_PUBLIC_ALCHEMY_API_KEY || ''
 
+const { chains, provider, webSocketProvider } = configureChains(
+  [
+    chain.mainnet,
+    chain.polygon,
+    chain.optimism,
+    chain.arbitrum,
+    ...(process.env.NEXT_PUBLIC_ENABLE_TESTNETS === 'true'
+      ? [chain.goerli, chain.localhost]
+      : []),
+  ],
+  [
+    alchemyProvider({
+      apiKey: ALCHEMY_API_KEY,
+    }),
+    publicProvider(),
+  ]
+)
+
+const { wallets } = getDefaultWallets({
+  appName: 'RainbowKit demo',
+  chains,
+})
+
+const demoAppInfo = {
+  appName: 'Rainbowkit Demo',
+}
+
+const connectors = connectorsForWallets(wallets)
+
+const wagmiClient = createClient({
+  autoConnect: true,
+  connectors,
+  provider,
+  webSocketProvider,
+})
+
+export default function App({ Component, pageProps }: AppProps) {
   return (
-    <>
-      <Head>
-        <title>Page title</title>
-        <meta name="viewport" content="minimum-scale=1, initial-scale=1, width=device-width" />
-      </Head>
-
-      <MantineProvider
-        withGlobalStyles
-        withNormalizeCSS
-        theme={{
-          /** Put your mantine theme override here */
-          colorScheme: 'light',
-        }}
+    <WagmiConfig client={wagmiClient}>
+      <RainbowKitProvider
+        appInfo={demoAppInfo}
+        chains={chains}
+        theme={darkTheme({
+          borderRadius: 'small',
+        })}
       >
-        <Component {...pageProps} />
-      </MantineProvider>
-    </>
-  );
+        <ChakraProvider>
+          <Component {...pageProps} />
+        </ChakraProvider>
+      </RainbowKitProvider>
+    </WagmiConfig>
+  )
 }

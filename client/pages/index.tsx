@@ -1,46 +1,41 @@
-import Head from 'next/head';
-import Image from 'next/image';
-import GameList from '../components/GameList';
-import StatBar from '../components/StatBar';
-import styles from '../styles/Home.module.css';
-import { NativeSelect } from '@mantine/core';
-import { Button } from '@mantine/core';
+import { Heading, useToast, Select } from '@chakra-ui/react'
+import type { NextPage } from 'next'
+import { Layout } from '../components/layout/Layout'
+import StatBar from '../components/StatBar'
+import { useIsMounted } from '../hooks/useIsMounted'
+import styles from '../styles/Home.module.css'
+import GameList from '../components/GameList'
 
-export default function Home() {
+const Home: NextPage = () => {
+  const { isMounted } = useIsMounted()
+  if (!isMounted) {
+    return null
+  }
+
   return (
-    <div className={styles.container}>
-      <Head>
-        <title>March Madness Survivor Pool</title>
-        <meta name="description" content="March Madness Survivor Pool" />
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
-
-      <nav className={styles.nav}>
-        <div className={styles.navbar}>
-          <div className={styles.navbar__title}>
-            <p> March Madness Survivor Pool</p>
-          </div>
-          <div className={styles.navbar__button}>
-            <Button variant="outline" uppercase>
-              Connect Wallet
-            </Button>
-          </div>
-        </div>
-        <StatBar totalEntries={500} survivingEntries={200} eliminatedEntries={300} />
-      </nav>
-
+    <Layout>
+      <Heading as="h1" mb="8">
+        March Madness Battle Royale
+      </Heading>
+      <StatBar
+        totalEntries={500}
+        survivingEntries={200}
+        eliminatedEntries={300}
+      />
       <main className={styles.main}>
         <div className={styles.main__header}>
           <div className={styles.main__header__text}>
             <p>Survivor Pick Sheet</p>
-            <p className={styles.deadline}> Deadline: Sunday, 3/22/2023, 8:00 am CST</p>
+            <p className={styles.deadline}>
+              {' '}
+              Deadline: Sunday, 3/22/2023, 8:00 am CST
+            </p>
           </div>
           <div className={styles.main__header__daySelector}>
-            <NativeSelect
-              data={['Day 1', 'Day 2', 'Day 3', 'Day 4']}
-              label="Select Day"
-              radius="xs"
-            />
+            <Select placeholder="Select Day">
+              <option value="option1">Day 1</option>
+              <option value="option2">Day 2</option>
+            </Select>
           </div>
         </div>
 
@@ -48,16 +43,8 @@ export default function Home() {
           <GameList />
         </div>
       </main>
-
-      <footer className={styles.footer}>
-        <a
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by BooshCoin
-        </a>
-      </footer>
-    </div>
-  );
+    </Layout>
+  )
 }
+
+export default Home
