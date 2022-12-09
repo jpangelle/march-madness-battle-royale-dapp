@@ -15,12 +15,9 @@ const ALCHEMY_API_KEY = process.env.NEXT_PUBLIC_ALCHEMY_API_KEY || ''
 
 const { chains, provider, webSocketProvider } = configureChains(
   [
-    chain.mainnet,
     chain.polygon,
-    chain.optimism,
-    chain.arbitrum,
     ...(process.env.NEXT_PUBLIC_ENABLE_TESTNETS === 'true'
-      ? [chain.goerli, chain.localhost]
+      ? [chain.polygonMumbai]
       : []),
   ],
   [
