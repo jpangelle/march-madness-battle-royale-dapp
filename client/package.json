@@ -1,33 +1,20 @@
 {
-  "name": "battle-royale-client",
-  "version": "0.1.0",
-  "private": true,
+  "name": "march-madness-battle-royale-client",
+  "type": "module",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
   },
   "dependencies": {
-    "@emotion/react": "^11.10.5",
-    "@emotion/server": "^11.10.0",
-    "@mantine/core": "^5.7.2",
-    "@mantine/hooks": "^5.7.2",
-    "@mantine/next": "^5.7.2",
-    "@types/node": "18.11.9",
-    "@types/react": "18.0.25",
-    "@types/react-dom": "18.0.8",
-    "@usedapp/core": "^1.2.2",
-    "@web3-react/core": "^8.0.35-beta.0",
-    "@web3-react/injected-connector": "^6.0.7",
-    "@web3-react/types": "^8.0.20-beta.0",
-    "eslint": "8.27.0",
-    "eslint-config-next": "13.0.3",
-    "ethers": "^5.7.2",
-    "next": "13.0.3",
-    "react": "18.2.0",
-    "react-dom": "18.2.0",
-    "typescript": "4.8.4",
-    "web3": "^1.8.1"
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.0.28",
+    "@types/react-dom": "^18.0.11",
+    "@vitejs/plugin-react": "^3.1.0",
+    "typescript": "^4.9.3",
+    "vite": "^4.2.0"
   }
 }

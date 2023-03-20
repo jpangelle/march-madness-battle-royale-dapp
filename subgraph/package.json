@@ -1,6 +1,5 @@
 {
-  "name": "subgraph",
-  "license": "UNLICENSED",
+  "name": "march-madness-battle-royale-subgraph",
   "scripts": {
     "codegen": "graph codegen",
     "build": "graph build",

@@ -1,5 +1,5 @@
 {
-  "name": "battle-royale-contracts",
+  "name": "march-madness-battle-royale-contracts",
   "scripts": {
     "deploy-verify": "npm run deploy | tee temp_address.txt && sleep 20 && npm run verify && rm temp_address.txt",
     "deploy": "hardhat run scripts/deploy.ts",
