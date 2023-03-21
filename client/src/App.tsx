@@ -11,7 +11,7 @@ import { usePrepareContractWrite, useContractWrite } from 'wagmi';
 import { BigNumber } from 'ethers';
 import { useState } from 'react';
 import usdcAbi from './usdc.abi.json';
-import { abi as battleRoyaleAbi } from '../../contracts/artifacts/contracts/BattleRoyale.sol/BattleRoyale.json';
+import battleRoyaleAbi from './battle-royale.abi.json';
 
 const requiredUSDCAllowance = BigNumber.from(10000000);
 const usdcContractAddress = '0xE097d6B3100777DC31B34dC2c58fB524C2e76921';

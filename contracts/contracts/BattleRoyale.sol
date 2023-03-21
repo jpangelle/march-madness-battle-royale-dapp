@@ -13,7 +13,7 @@ contract BattleRoyale is AccessControl {
         bool isRegistered;
     }
 
-    IERC20 usdc = IERC20(0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174);
+    IERC20 usdc = IERC20(0xE097d6B3100777DC31B34dC2c58fB524C2e76921);
 
     uint256[] public eliminatedTeams;
 
