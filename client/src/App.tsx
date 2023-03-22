@@ -16,7 +16,7 @@ import battleRoyaleAbi from './battle-royale.abi.json';
 const requiredUSDCAllowance = BigNumber.from(10000000);
 const usdcContractAddress = '0xE097d6B3100777DC31B34dC2c58fB524C2e76921';
 const battleRoyaleContractAddress =
-  '0x26C3bBaB45aff0ea34f9C27F1Fe9d738A54a8845';
+  '0x6Af71Cc5bad83f081a9616F4371fA00246aE54Ff';
 
 export const App = () => {
   const [poolEntryName, setPoolEntryName] = useState('');
